@@ -78,6 +78,7 @@ class TokensParser(object):
             token (str): input token
 
         Returns:
+            bool: необходимость замены символов в слове
             str: lang type
         """
         rus_lenght = 0
@@ -89,31 +90,35 @@ class TokensParser(object):
                 eng_lenght += 1
 
         if not rus_lenght:
-            return 'english'
+            return False, 'english'
 
-        if not rus_lenght:
-            return 'russian'
+        if not eng_lenght:
+            return False, 'russian'
 
+        self.have_fake = True
         rus_ratio = rus_lenght / len(token)
         eng_lenght = eng_lenght / len(token)
 
         if rus_ratio < self.rapid:
-            return 'english'
+            return True, 'english'
 
         if eng_lenght < self.rapid:
-            return 'russian'
-        return self.lang
+            return True, 'russian'
+        return False, self.lang
 
     def checkFakeSymbols(self, token):
         # print(self.getLang(token))
-        lang = self.determineLang(token)
+        # тут фактически происходит повторный обход слова
+        incorr, lang = self.determineLang(token)
+        if not incorr:
+            return token
+
         sym_map = self.symbols_map[lang]
         ret_value = ''
         for sym in token:
             contain_foreign = next((
                 x for x in sym_map if sym == x[0]), None)
             if contain_foreign:
-                self.have_fake = True
                 ret_value += contain_foreign[1]
                 continue
             ret_value += sym
